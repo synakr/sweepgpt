@@ -1,0 +1,156 @@
+#gptBulkPanel {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+
+  width: 260px;
+
+  padding: 18px;
+
+  border-radius: 18px;
+
+  background: rgba(32, 33, 35, 0.88);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+
+  color: #fff;
+
+  font-family: Inter, system-ui, sans-serif;
+
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, .45),
+    inset 0 1px 0 rgba(255,255,255,.05);
+
+  z-index: 999999;
+}
+
+#gptBulkPanel h3 {
+  margin: 0 0 16px;
+
+  font-size: 18px;
+  font-weight: 700;
+
+  text-align: center;
+}
+
+#gptBulkPanel button {
+
+  width: 100%;
+
+  padding: 12px 14px;
+
+  margin-top: 10px;
+
+  border: none;
+  border-radius: 12px;
+
+  background: #2f3033;
+
+  color: white;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all .18s ease;
+}
+
+#gptBulkPanel button:hover {
+
+  background: #3b3c40;
+
+  transform: translateY(-1px);
+}
+
+#gptBulkPanel button:active {
+
+  transform: scale(.98);
+}
+
+#scanChats {
+
+  background: #10a37f !important;
+}
+
+#scanChats:hover {
+
+  background: #12b58d !important;
+}
+
+#selectAll {
+
+  background: #2563eb !important;
+}
+
+#selectAll:hover {
+
+  background: #3b82f6 !important;
+}
+
+#deleteSelected {
+
+  background: #dc2626 !important;
+}
+
+#deleteSelected:hover {
+
+  background: #ef4444 !important;
+}
+
+#chatCount,
+#progressText {
+
+  margin-top: 14px;
+
+  font-size: 13px;
+
+  color: #cfcfcf;
+
+  text-align: center;
+}
+
+#progressBar {
+
+  margin-top: 10px;
+
+  width: 100%;
+  height: 8px;
+
+  background: rgba(255,255,255,.08);
+
+  border-radius: 999px;
+
+  overflow: hidden;
+}
+
+#progressFill {
+
+  width: 0%;
+
+  height: 100%;
+
+  background: linear-gradient(
+    90deg,
+    #10a37f,
+    #25d0a5
+  );
+
+  transition: width .25s ease;
+}
+
+.gptCheckbox {
+
+  width: 18px;
+  height: 18px;
+
+  margin-right: 10px;
+
+  accent-color: #10a37f;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+}
