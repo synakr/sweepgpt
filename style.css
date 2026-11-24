@@ -20,8 +20,8 @@
   font-family: Inter, system-ui, sans-serif;
 
   box-shadow:
-    0 12px 40px rgba(0, 0, 0, .45),
-    inset 0 1px 0 rgba(255,255,255,.05);
+    0 12px 40px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
 
   z-index: 999999;
 }
@@ -36,7 +36,6 @@
 }
 
 #gptBulkPanel button {
-
   width: 100%;
 
   padding: 12px 14px;
@@ -55,54 +54,45 @@
 
   cursor: pointer;
 
-  transition: all .18s ease;
+  transition: all 0.18s ease;
 }
 
 #gptBulkPanel button:hover {
-
   background: #3b3c40;
 
   transform: translateY(-1px);
 }
 
 #gptBulkPanel button:active {
-
-  transform: scale(.98);
+  transform: scale(0.98);
 }
 
 #scanChats {
-
   background: #10a37f !important;
 }
 
 #scanChats:hover {
-
   background: #12b58d !important;
 }
 
 #selectAll {
-
   background: #2563eb !important;
 }
 
 #selectAll:hover {
-
   background: #3b82f6 !important;
 }
 
 #deleteSelected {
-
   background: #dc2626 !important;
 }
 
 #deleteSelected:hover {
-
   background: #ef4444 !important;
 }
 
 #chatCount,
 #progressText {
-
   margin-top: 14px;
 
   font-size: 13px;
@@ -113,13 +103,12 @@
 }
 
 #progressBar {
-
   margin-top: 10px;
 
   width: 100%;
   height: 8px;
 
-  background: rgba(255,255,255,.08);
+  background: rgba(255, 255, 255, 0.08);
 
   border-radius: 999px;
 
@@ -127,22 +116,16 @@
 }
 
 #progressFill {
-
   width: 0%;
 
   height: 100%;
 
-  background: linear-gradient(
-    90deg,
-    #10a37f,
-    #25d0a5
-  );
+  background: linear-gradient(90deg, #10a37f, #25d0a5);
 
-  transition: width .25s ease;
+  transition: width 0.25s ease;
 }
 
 .gptCheckbox {
-
   width: 18px;
   height: 18px;
 
@@ -153,4 +136,30 @@
   cursor: pointer;
 
   flex-shrink: 0;
+}
+
+.gptCheckbox {
+  appearance: auto !important;
+  -webkit-appearance: checkbox !important;
+
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px !important;
+  min-height: 18px !important;
+
+  margin: 0 10px 0 0 !important;
+  padding: 0 !important;
+
+  accent-color: #10a37f !important;
+
+  cursor: pointer !important;
+  flex: 0 0 18px !important;
+
+  pointer-events: auto !important;
+  position: relative !important;
+  z-index: 2 !important;
 }

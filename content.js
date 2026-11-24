@@ -1,34 +1,23 @@
 console.log("Bulk Delete Loaded");
 
 if (document.getElementById("gptBulkPanel")) {
-    document.getElementById("gptBulkPanel").remove();
+  document.getElementById("gptBulkPanel").remove();
 } else {
-    init();
+  init();
 }
+
 function init() {
+  const panel = document.createElement("div");
+  panel.id = "gptBulkPanel";
 
-    const panel = document.createElement("div");
-    panel.id = "gptBulkPanel";
-
-    panel.innerHTML = `
+  panel.innerHTML = `
         <h3>🗑️ Bulk Delete</h3>
 
-        <button id="scanChats">
-            🔄 Scan Chats
-        </button>
+        <button id="scanChats">🔄 Scan Chats</button>
+        <button id="selectAll">✅ Select All</button>
+        <button id="deleteSelected">🗑 Delete Selected</button>
 
-        <button id="selectAll">
-            ✅ Select All
-        </button>
-
-        <button id="deleteSelected">
-            🗑 Delete Selected
-        </button>
-
-        <div id="chatCount">
-            Found : 0
-        </div>
-
+        <div id="chatCount">Found: 0</div>
         <div id="progressText"></div>
 
         <div id="progressBar" style="
@@ -69,216 +58,405 @@ function init() {
             </ul>
         </div>
     `;
-    document.body.appendChild(panel);
 
-    document.getElementById("scanChats").onclick = scanChats;
-    document.getElementById("selectAll").onclick = selectAll;
-    document.getElementById("deleteSelected").onclick = deleteSelected;
+  document.body.appendChild(panel);
+
+  document.getElementById("scanChats").onclick = scanChats;
+  document.getElementById("selectAll").onclick = selectAll;
+  document.getElementById("deleteSelected").onclick = deleteSelected;
 }
+
+// --------------------------------------------------
+// 1. SCAN CHATS
+// --------------------------------------------------
 
 function scanChats() {
+  document.querySelectorAll(".gptCheckbox").forEach((box) => box.remove());
 
-    // Remove old checkboxes
-    document.querySelectorAll(".gptCheckbox").forEach(box => {
-        box.remove();
+  const candidates = document.querySelectorAll(
+    '[data-sidebar-cycle-item][role="group"]',
+  );
+
+  const rows = [...new Set(candidates)].filter((row) => {
+    const href =
+      row
+        .querySelector('a[data-interactive-row-link="true"]')
+        ?.getAttribute("href") || "";
+
+    return /^\/c\/[^/?#]+/.test(href);
+  });
+
+  let count = 0;
+
+  rows.forEach((row) => {
+    if (row.querySelector(".gptCheckbox")) return;
+
+    const checkbox = document.createElement("input");
+
+    checkbox.type = "checkbox";
+    checkbox.className = "gptCheckbox";
+    checkbox.setAttribute("aria-label", "Select conversation");
+
+    const styles = {
+      appearance: "auto",
+      display: "inline-block",
+      visibility: "visible",
+      opacity: "1",
+      position: "relative",
+      zIndex: "2",
+      width: "18px",
+      height: "18px",
+      minWidth: "18px",
+      minHeight: "18px",
+      margin: "0 10px 0 0",
+      padding: "0",
+      accentColor: "#10a37f",
+      cursor: "pointer",
+      flex: "0 0 18px",
+      pointerEvents: "auto",
+    };
+
+    Object.entries(styles).forEach(([key, value]) => {
+      const cssKey = key.replace(/[A-Z]/g, (m) => `-${m.toLowerCase()}`);
+
+      checkbox.style.setProperty(cssKey, value, "important");
     });
 
-    const rows = document.querySelectorAll(
-        '[data-sidebar-item="true"]'
+    ["click", "mousedown", "mouseup", "pointerdown", "pointerup"].forEach(
+      (eventName) => {
+        checkbox.addEventListener(eventName, (event) => {
+          event.stopPropagation();
+        });
+      },
     );
 
-    let count = 0;
+    const container = row.querySelector(":scope > div > div.flex");
 
-    rows.forEach(row => {
+    if (!container) return;
 
-        // Don't add twice
-        if (row.querySelector(".gptCheckbox"))
-            return;
+    container.insertBefore(checkbox, container.firstChild);
 
-        const box = document.createElement("input");
+    count++;
+  });
 
-        box.type = "checkbox";
-        box.className = "gptCheckbox";
+  const countElement = document.getElementById("chatCount");
 
-        Object.assign(box.style, {
-            width: "18px",
-            height: "18px",
-            marginRight: "10px",
-            accentColor: "#10a37f",
-            cursor: "pointer",
-            flexShrink: "0",
-            zIndex: "99999",
-            position: "relative"
-        });
+  if (countElement) {
+    countElement.textContent = count
+      ? `Found: ${count}`
+      : "Found: 0 — expand the sidebar and try again.";
+  }
 
-        // Prevent opening the chat
-        ["click", "mousedown", "mouseup"].forEach(evt => {
-            box.addEventListener(evt, e => {
-                e.stopPropagation();
-            });
-        });
-
-        // Insert before the first child
-        row.insertBefore(box, row.firstChild);
-
-        count++;
-    });
-
-    document.getElementById("chatCount").textContent =
-        `Found : ${count}`;
+  console.log("[ChatSweep] Scan complete:", {
+    candidateLinks: candidates.length,
+    conversationRows: rows.length,
+    checkboxesAdded: count,
+  });
 }
 
-function sleep(ms) {
-    return new Promise(r => setTimeout(r, ms));
-}
+// --------------------------------------------------
+// 2. SELECT ALL
+// --------------------------------------------------
 
 function selectAll() {
+  document
+    .querySelectorAll(".gptCheckbox")
+    .forEach((box) => (box.checked = true));
+}
 
-    document
-        .querySelectorAll(".gptCheckbox")
-        .forEach(box => box.checked = true);
+// --------------------------------------------------
+// 3. HELPERS
+// --------------------------------------------------
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function randomDelay(min = 500, max = 1200) {
+  const delay = Math.floor(Math.random() * (max - min + 1)) + min;
+
+  return sleep(delay);
+}
+
+async function waitUntil(callback, timeout = 5000) {
+  const start = Date.now();
+
+  while (Date.now() - start < timeout) {
+    const result = callback();
+
+    if (result) return result;
+
+    await sleep(100);
+  }
+
+  return null;
 }
 
 function updateProgress(current, total) {
+  const percent = Math.round((current / total) * 100);
 
-    const percent = Math.round((current / total) * 100);
+  const progressBar = document.getElementById("progressBar");
+  const progressFill = document.getElementById("progressFill");
 
-    document.getElementById("progressBar").style.display = "block";
+  if (progressBar) {
+    progressBar.style.display = "block";
+  }
 
-    document.getElementById("progressFill").style.width =
-        percent + "%";
+  if (progressFill) {
+    progressFill.style.width = percent + "%";
+  }
 
-    document.getElementById("progressText").textContent =
-        `Deleting ${current} / ${total}`;
+  const progressText = document.getElementById("progressText");
+
+  if (progressText) {
+    progressText.textContent = `Deleting ${current} / ${total}`;
+  }
 }
 
+// --------------------------------------------------
+// 4. FIND CHAT
+// --------------------------------------------------
+
+function findChat(id) {
+  return [
+    ...document.querySelectorAll('[data-sidebar-cycle-item][role="group"]'),
+  ].find((chat) => {
+    const link = chat.querySelector('a[data-interactive-row-link="true"]');
+
+    return link?.getAttribute("href") === `/c/${id}`;
+  });
+}
+
+// --------------------------------------------------
+// 5. MAIN DELETE WORKFLOW
+// --------------------------------------------------
+
 async function deleteSelected() {
+  // Collect selected conversation IDs
+  const selected = [...document.querySelectorAll(".gptCheckbox:checked")];
 
-    // Collect selected conversation IDs first
-    const ids = [];
+  const ids = selected
+    .map((box) => {
+      const chat = box.closest('[data-sidebar-cycle-item][role="group"]');
 
-    document.querySelectorAll(".gptCheckbox:checked").forEach(box => {
+      const link = chat?.querySelector('a[data-interactive-row-link="true"]');
 
-        const row = box.closest("[data-sidebar-item='true']");
-        if (!row) return;
+      return link?.getAttribute("href")?.match(/^\/c\/([^/?#]+)/)?.[1];
+    })
+    .filter(Boolean);
 
-        const menuBtn = row.querySelector(
-            "[data-conversation-options-trigger]"
-        );
+  const uniqueIds = [...new Set(ids)];
 
-        if (!menuBtn) return;
+  if (!uniqueIds.length) {
+    alert("No conversations selected.");
+    return;
+  }
 
-        ids.push(
-            menuBtn.getAttribute("data-conversation-options-trigger")
-        );
-    });
+  // Initial confirmation
+  if (
+    !confirm(
+      `Delete ${uniqueIds.length} selected conversations?\n\nThis cannot be undone.`,
+    )
+  ) {
+    return;
+  }
 
-    if (!ids.length) {
-        alert("Select chats first.");
-        return;
+  let deleted = 0;
+  let failed = 0;
+
+  const progressText = document.getElementById("progressText");
+  const progressBar = document.getElementById("progressBar");
+  const progressFill = document.getElementById("progressFill");
+
+  if (progressBar) {
+    progressBar.style.display = "block";
+  }
+
+  // Process conversations sequentially
+  for (let i = 0; i < uniqueIds.length; i++) {
+    const id = uniqueIds[i];
+    let stage = "finding chat";
+
+    try {
+      console.log(`[ChatSweep] Processing ${i + 1}/${uniqueIds.length}`, id);
+
+      // ------------------------------------------
+      // STEP 1: FIND CHAT
+      // ------------------------------------------
+
+      let chat = findChat(id);
+
+      if (!chat) {
+        throw new Error("Conversation not found");
+      }
+
+      // ------------------------------------------
+      // STEP 2: SCROLL INTO VIEW
+      // ------------------------------------------
+
+      stage = "scrolling";
+
+      chat.scrollIntoView({
+        block: "center",
+        behavior: "instant",
+      });
+
+      await randomDelay(400, 800);
+
+      // ------------------------------------------
+      // STEP 3: FIND THREE-DOT BUTTON
+      // ------------------------------------------
+
+      stage = "finding chat actions";
+
+      chat = findChat(id);
+
+      const actionButton = chat?.querySelector(
+        'button[aria-label="Chat actions"]',
+      );
+
+      if (!actionButton) {
+        throw new Error("Three-dot button not found");
+      }
+
+      // ------------------------------------------
+      // STEP 4: OPEN THREE-DOT MENU
+      // EXACT WORKING METHOD: .click()
+      // ------------------------------------------
+
+      stage = "opening chat actions";
+
+      actionButton.click();
+
+      await sleep(800);
+
+      console.log("[ChatSweep] Menu opened.");
+
+      // ------------------------------------------
+      // STEP 5: FIND VISIBLE DELETE OPTION
+      // SEARCH ALL MENU CONTAINERS
+      // ------------------------------------------
+
+      stage = "finding Delete";
+
+      const deleteItem = await waitUntil(() =>
+        [
+          ...document.querySelectorAll('[role="menu"] *, [role="menuitem"]'),
+        ].find(
+          (el) =>
+            el.textContent.trim().toLowerCase() === "delete" &&
+            el.getClientRects().length > 0,
+        ),
+      );
+
+      if (!deleteItem) {
+        throw new Error("Delete option not found");
+      }
+
+      console.log("[ChatSweep] Found Delete option:", deleteItem);
+
+      await randomDelay(300, 600);
+
+      // ------------------------------------------
+      // STEP 6: CLICK DELETE
+      // ------------------------------------------
+
+      stage = "clicking Delete";
+
+      deleteItem.click();
+
+      console.log("[ChatSweep] Delete selected.");
+
+      // ------------------------------------------
+      // STEP 7: WAIT FOR CONFIRMATION DIALOG
+      // ------------------------------------------
+
+      stage = "waiting for Delete chat popup";
+
+      const finalDeleteButton = await waitUntil(() =>
+        [...document.querySelectorAll('button[type="submit"]')].find(
+          (button) =>
+            button.textContent.trim() === "Delete chat" &&
+            !button.disabled &&
+            button.getAttribute("aria-disabled") !== "true" &&
+            button.getClientRects().length > 0,
+        ),
+      );
+
+      if (!finalDeleteButton) {
+        throw new Error("Delete chat confirmation not found");
+      }
+
+      console.log("[ChatSweep] Confirmation dialog opened.");
+
+      await randomDelay(400, 800);
+
+      // ------------------------------------------
+      // STEP 8: CLICK FINAL DELETE CHAT
+      // EXACT WORKING METHOD: .click()
+      // ------------------------------------------
+
+      stage = "clicking Delete chat";
+
+      finalDeleteButton.click();
+
+      console.log("[ChatSweep] Final Delete chat clicked.");
+
+      // ------------------------------------------
+      // STEP 9: VERIFY DELETION
+      // ------------------------------------------
+
+      stage = "verifying deletion";
+
+      const removed = await waitUntil(() => !findChat(id), 7000);
+
+      if (!removed) {
+        throw new Error("Conversation still appears in sidebar");
+      }
+
+      deleted++;
+
+      console.log("[ChatSweep] Deleted successfully:", id);
+    } catch (error) {
+      failed++;
+
+      console.error(`[ChatSweep] Failed at "${stage}" for ${id}:`, error);
     }
 
-    if (!confirm(
-    `Delete ${ids.length} conversations?
+    // ------------------------------------------
+    // STEP 10: UPDATE PROGRESS
+    // ------------------------------------------
 
-    This action cannot be undone.
+    const percent = Math.round(((i + 1) / uniqueIds.length) * 100);
 
-    During deletion:
-    • Keep this ChatGPT tab open.
-    • Don't switch tabs or windows.
-    • Don't scroll or click anywhere.
-    • Wait until the progress bar says Finished.`
-    )) {
-        return;
+    if (progressFill) {
+      progressFill.style.width = `${percent}%`;
     }
 
-    console.log("Deleting", ids.length, "conversations");
-
-    for (let i = 0; i < ids.length; i++) {
-
-        const id = ids[i];
-
-        updateProgress(i + 1, ids.length);
-
-        console.log(`Deleting ${i + 1}/${ids.length}`);
-
-        // Wait until sidebar settles
-        await sleep(800);
-
-        // Find the row AGAIN after React rerender
-        const menuBtn = document.querySelector(
-            `[data-conversation-options-trigger="${id}"]`
-        );
-
-        if (!menuBtn) {
-            console.log("Already gone:", id);
-            continue;
-        }
-
-        const row = menuBtn.closest(
-            "[data-sidebar-item='true']"
-        );
-
-        row.scrollIntoView({
-            block: "center",
-            behavior: "instant"
-        });
-
-        await sleep(250 + Math.random() * 250);
-
-        // Hover
-        ["mouseenter","mouseover","mousemove"].forEach(type=>{
-            row.dispatchEvent(new MouseEvent(type,{
-                bubbles:true,
-                cancelable:true,
-                view:window
-            }));
-        });
-
-        await sleep(250 + Math.random() * 250);
-
-        // Open menu
-        menuBtn.click();
-
-        await sleep(350 + Math.random() * 250);
-
-        // Click Delete
-        const deleteItem =
-            [...document.querySelectorAll('[role="menuitem"]')]
-            .find(el => el.textContent.trim() === "Delete");
-
-        if (!deleteItem) {
-            console.log("Delete menu not found");
-            continue;
-        }
-
-        deleteItem.click();
-
-        await sleep(400 + Math.random() * 250);
-
-        // Confirm
-        const confirmBtn = document.querySelector(
-            '[data-testid="delete-conversation-confirm-button"]'
-        );
-
-        if (!confirmBtn) {
-            console.log("Confirm button missing");
-            continue;
-        }
-
-        confirmBtn.click();
-
-        console.log("Deleted");
-
-        // Wait for React to finish
-        await sleep(1800 + Math.random() * 1200);
+    if (progressText) {
+      progressText.textContent =
+        `Processed ${i + 1}/${uniqueIds.length} | ` +
+        `Deleted: ${deleted} | Failed: ${failed}`;
     }
 
-    document.getElementById("progressText").textContent =
-        "✅ Finished";
+    await randomDelay(600, 1100);
+  }
 
-    document.getElementById("progressFill").style.width = "100%";
+  // ----------------------------------------------
+  // STEP 11: FINISH
+  // ----------------------------------------------
 
-    console.log("Finished");
+  if (progressText) {
+    progressText.textContent = `Finished! Deleted: ${deleted} | Failed: ${failed}`;
+  }
+
+  if (progressFill) {
+    progressFill.style.width = "100%";
+  }
+
+  console.log("[ChatSweep] Final result:", {
+    total: uniqueIds.length,
+    deleted,
+    failed,
+  });
 }
